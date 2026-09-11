@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: fractalpay-merchant-api-demo
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    envVars:
+      - key: SEED_API_KEY
+        sync: false

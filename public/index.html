@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fractal Pay — Merchant API Dashboard</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f7f7f8;
+    --card-bg: #ffffff;
+    --border: #e2e2e6;
+    --text: #1a1a1e;
+    --text-dim: #6b6b74;
+    --accent: #4f46e5;
+    --green-bg: #e6f6ec; --green-text: #0f7a3d;
+    --amber-bg: #fdf3e0; --amber-text: #92600a;
+    --red-bg: #fbe9e9; --red-text: #a3231f;
+    --gray-bg: #eceef1; --gray-text: #52565f;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #16161a;
+      --card-bg: #1f1f24;
+      --border: #303038;
+      --text: #f0f0f2;
+      --text-dim: #9a9aa2;
+      --green-bg: #10331f; --green-text: #4ade80;
+      --amber-bg: #3a2c0d; --amber-text: #fbbf24;
+      --red-bg: #3a1414; --red-text: #f87171;
+      --gray-bg: #2a2a30; --gray-text: #c4c4cc;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: 20px 16px 60px;
+    max-width: 1080px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 1.3rem; margin: 0 0 4px; }
+  .subtitle { color: var(--text-dim); font-size: 0.85rem; margin: 0 0 20px; }
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .card h2 { font-size: 0.95rem; margin: 0 0 12px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  input, select, button {
+    font: inherit;
+    padding: 7px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+  }
+  input[type="text"] { min-width: 260px; }
+  button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 0.82rem;
+  }
+  button.secondary { background: var(--gray-bg); color: var(--text); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  button:hover:not(:disabled) { filter: brightness(1.08); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th { color: var(--text-dim); font-weight: 600; }
+  .table-wrap { overflow-x: auto; }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+  .b-green { background: var(--green-bg); color: var(--green-text); }
+  .b-amber { background: var(--amber-bg); color: var(--amber-text); }
+  .b-red { background: var(--red-bg); color: var(--red-text); }
+  .b-gray { background: var(--gray-bg); color: var(--gray-text); }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+  .stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+  .stat .label { font-size: 0.72rem; color: var(--text-dim); }
+  .stat .value { font-size: 1.15rem; font-weight: 600; margin-top: 2px; }
+  .muted { color: var(--text-dim); font-size: 0.8rem; }
+  .top-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .top-grid { grid-template-columns: 1fr; } }
+  #connectPanel.connected { display: none; }
+  #mainPanels { display: none; }
+  #mainPanels.visible { display: block; }
+  code { font-size: 0.78rem; background: var(--gray-bg); padding: 1px 5px; border-radius: 4px; }
+  .actions-cell { display: flex; gap: 6px; flex-wrap: wrap; }
+  .actions-cell button, .actions-cell select { padding: 4px 8px; font-size: 0.75rem; }
+</style>
+</head>
+<body>
+  <h1>Fractal Pay — Merchant API Dashboard</h1>
+  <p class="subtitle">Live view of the merchant-layer prototype: orders, COD risk, webhook deliveries, reconciliation and funding.</p>
+
+  <div class="card" id="connectPanel">
+    <h2>Connect</h2>
+    <div class="row">
+      <input id="apiKeyInput" type="text" placeholder="Paste merchant api_key (from npm run seed)" />
+      <button id="connectBtn">Connect</button>
+      <span class="muted" id="connectStatus"></span>
+    </div>
+  </div>
+
+  <div id="mainPanels">
+    <div class="card">
+      <div class="row" style="justify-content: space-between;">
+        <div>
+          <strong id="merchantName"></strong>
+          <span class="muted" id="merchantId"></span>
+        </div>
+        <div class="row">
+          <span class="muted">Auto-refresh: <span id="refreshIndicator">on</span></span>
+          <button class="secondary" id="disconnectBtn">Disconnect</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Actions</h2>
+      <div class="row">
+        <select id="newOrderType">
+          <option value="cod">cod</option>
+          <option value="invoice_terms">invoice_terms</option>
+          <option value="prepaid">prepaid</option>
+        </select>
+        <button id="simulateCaSyncBtn">Simulate Command Alkon order sync</button>
+        <button id="simulateFundingBtn" class="secondary">Run nightly funding batch</button>
+      </div>
+      <p class="muted" style="margin-top:8px;">
+        Tip: a customer name starting with <code>HOLD-</code> or <code>DECLINE-</code> forces that COD outcome deterministically.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Orders</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>ID</th><th>Customer</th><th>Type</th><th>Amount</th><th>Status</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="ordersBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="top-grid">
+      <div class="card">
+        <h2>Reconciliation</h2>
+        <div class="stat-grid" id="reconciliationStats"></div>
+      </div>
+      <div class="card">
+        <h2>Funding</h2>
+        <div class="stat-grid" id="fundingStats"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Webhook deliveries</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Event</th><th>Status</th><th>HTTP</th><th>Attempts</th><th>Created</th></tr>
+          </thead>
+          <tbody id="deliveriesBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+<script>
+const STORAGE_KEY = "fractalpay_dashboard_api_key";
+let apiKey = null;
+let refreshTimer = null;
+
+const el = (id) => document.getElementById(id);
+
+function money(cents) {
+  return "$" + ((cents ?? 0) / 100).toFixed(2);
+}
+
+function shortId(id) {
+  if (!id) return "";
+  return id.length > 14 ? id.slice(0, 14) + "…" : id;
+}
+
+function badgeClass(status) {
+  const green = ["cleared", "dispatched", "delivered", "succeeded", "reconciled", "paid", "deposited", "active"];
+  const amber = ["pending", "hold", "cod_hold", "cod_check_pending", "partially_paid", "created"];
+  const red = ["declined", "failed", "exhausted", "cancelled", "void", "overdue"];
+  if (green.includes(status)) return "b-green";
+  if (amber.includes(status)) return "b-amber";
+  if (red.includes(status)) return "b-red";
+  return "b-gray";
+}
+
+function badge(status) {
+  return `<span class="badge ${badgeClass(status)}">${status}</span>`;
+}
+
+async function apiFetch(path, method = "GET", body) {
+  const res = await fetch("/api/v1" + path, {
+    method,
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer " + apiKey,
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const json = await res.json().catch(() => null);
+  if (!res.ok) throw new Error(json?.error?.message ?? `HTTP ${res.status}`);
+  return json;
+}
+
+async function connect(key) {
+  apiKey = key;
+  try {
+    const merchant = await apiFetch("/me");
+    localStorage.setItem(STORAGE_KEY, key);
+    el("connectStatus").textContent = "";
+    el("connectPanel").classList.add("connected");
+    el("mainPanels").classList.add("visible");
+    el("merchantName").textContent = merchant.name;
+    el("merchantId").textContent = " (" + merchant.id + ")";
+    await refreshAll();
+    if (refreshTimer) clearInterval(refreshTimer);
+    refreshTimer = setInterval(refreshAll, 2000);
+  } catch (err) {
+    apiKey = null;
+    el("connectStatus").textContent = "Failed to connect: " + err.message;
+  }
+}
+
+function disconnect() {
+  apiKey = null;
+  localStorage.removeItem(STORAGE_KEY);
+  if (refreshTimer) clearInterval(refreshTimer);
+  el("connectPanel").classList.remove("connected");
+  el("mainPanels").classList.remove("visible");
+}
+
+async function refreshAll() {
+  await Promise.all([refreshOrders(), refreshDeliveries(), refreshReconciliation(), refreshFunding()]).catch(
+    (err) => console.error(err),
+  );
+}
+
+async function refreshOrders() {
+  const { data } = await apiFetch("/orders?limit=25");
+  const rows = data.map((o) => {
+    const actions = [];
+    if (o.order_type === "cod" && !["dispatched", "delivered"].includes(o.status)) {
+      actions.push(
+        `<select data-order="${o.id}" class="pm-select">
+           <option value="card">card</option>
+           <option value="ach">ach</option>
+         </select>`,
+      );
+      actions.push(`<button class="secondary" data-action="cod-check" data-order="${o.id}">COD check</button>`);
+      actions.push(`<button data-action="dispatch" data-order="${o.id}">Dispatch</button>`);
+    }
+    actions.push(
+      `<select data-order="${o.id}" class="pay-pm-select">
+         <option value="card">card</option>
+         <option value="ach">ach</option>
+       </select>`,
+    );
+    actions.push(`<button class="secondary" data-action="pay" data-order="${o.id}">Simulate payment</button>`);
+    return `<tr>
+      <td title="${o.id}">${shortId(o.id)}</td>
+      <td>${o.customer_name}</td>
+      <td>${o.order_type}</td>
+      <td>${money(o.amount_due_cents)}</td>
+      <td>${badge(o.status)}</td>
+      <td><div class="actions-cell">${actions.join("")}</div></td>
+    </tr>`;
+  });
+  el("ordersBody").innerHTML = rows.join("") || `<tr><td colspan="6" class="muted">No orders yet.</td></tr>`;
+}
+
+async function refreshDeliveries() {
+  const { data } = await apiFetch("/webhooks/deliveries?limit=20");
+  const rows = data.map(
+    (d) => `<tr>
+      <td>${d.event_type}</td>
+      <td>${badge(d.status)}</td>
+      <td>${d.response_status_code ?? "—"}</td>
+      <td>${d.attempt_count}</td>
+      <td>${new Date(d.created_at).toLocaleTimeString()}</td>
+    </tr>`,
+  );
+  el("deliveriesBody").innerHTML =
+    rows.join("") || `<tr><td colspan="5" class="muted">No webhook deliveries yet.</td></tr>`;
+}
+
+async function refreshReconciliation() {
+  const r = await apiFetch("/reconciliation/report");
+  el("reconciliationStats").innerHTML = `
+    <div class="stat"><div class="label">Reconciled invoices</div><div class="value">${r.reconciled_invoice_count}</div></div>
+    <div class="stat"><div class="label">Reconciled amount</div><div class="value">${money(r.reconciled_amount_cents)}</div></div>
+    <div class="stat"><div class="label">Open invoices</div><div class="value">${r.open_invoice_count}</div></div>
+    <div class="stat"><div class="label">Open amount</div><div class="value">${money(r.open_amount_cents)}</div></div>
+    <div class="stat"><div class="label">Unmatched txns</div><div class="value">${r.unmatched_transaction_count}</div></div>
+    <div class="stat"><div class="label">Avg time to reconcile</div><div class="value">${
+      r.average_time_to_reconcile_seconds ? Math.round(r.average_time_to_reconcile_seconds) + "s" : "—"
+    }</div></div>`;
+}
+
+async function refreshFunding() {
+  const r = await apiFetch("/funding/report");
+  el("fundingStats").innerHTML = `
+    <div class="stat"><div class="label">Card total</div><div class="value">${money(r.total_card_cents)}</div></div>
+    <div class="stat"><div class="label">ACH total</div><div class="value">${money(r.total_ach_cents)}</div></div>
+    <div class="stat"><div class="label">Fees</div><div class="value">${money(r.total_fee_cents)}</div></div>
+    <div class="stat"><div class="label">Net deposit</div><div class="value">${money(r.total_net_deposit_cents)}</div></div>
+    <div class="stat"><div class="label">Batches</div><div class="value">${r.batch_count}</div></div>`;
+}
+
+el("connectBtn").addEventListener("click", () => {
+  const key = el("apiKeyInput").value.trim();
+  if (key) connect(key);
+});
+el("apiKeyInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") el("connectBtn").click();
+});
+el("disconnectBtn").addEventListener("click", disconnect);
+
+el("simulateCaSyncBtn").addEventListener("click", async () => {
+  try {
+    await apiFetch("/_demo/simulate-ca-order-sync", "POST", { order_type: el("newOrderType").value });
+    await refreshOrders();
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+el("simulateFundingBtn").addEventListener("click", async () => {
+  try {
+    await apiFetch("/_demo/simulate-funding-batch", "POST", {});
+    await refreshAll();
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+el("ordersBody").addEventListener("click", async (e) => {
+  const action = e.target.dataset?.action;
+  if (!action) return;
+  const orderId = e.target.dataset.order;
+  const row = e.target.closest("tr");
+  try {
+    if (action === "cod-check") {
+      const pm = row.querySelector(".pm-select").value;
+      await apiFetch(`/orders/${orderId}/cod-check`, "POST", { payment_method: pm });
+    } else if (action === "dispatch") {
+      await apiFetch(`/orders/${orderId}/dispatch`, "POST");
+    } else if (action === "pay") {
+      const pm = row.querySelector(".pay-pm-select").value;
+      await apiFetch("/_demo/simulate-payment", "POST", { order_id: orderId, payment_method: pm });
+    }
+    await refreshAll();
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+const savedKey = localStorage.getItem(STORAGE_KEY);
+if (savedKey) {
+  el("apiKeyInput").value = savedKey;
+  connect(savedKey);
+}
+</script>
+</body>
+</html>
