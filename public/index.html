@@ -61,58 +61,116 @@
   html { scroll-behavior: smooth; }
   @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
   body {
+    margin: 0;
     background: var(--bg);
     color: var(--text);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    padding: 20px 16px 72px;
-    max-width: 1080px;
-    margin: 0 auto;
   }
 
-  .brand-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 4px;
-  }
+  .petal { fill: var(--accent); }
+  .brand-row { display: flex; align-items: center; gap: 10px; }
   .brand-mark { flex: none; display: block; }
-  .brand-text h1 {
-    font-size: 1.15rem;
-    font-weight: 700;
-    margin: 0;
-    letter-spacing: -0.01em;
-  }
   .brand-text .eyebrow {
     font-family: var(--font-mono);
-    font-size: 0.68rem;
-    letter-spacing: 0.12em;
+    font-size: 0.64rem;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--accent);
     font-weight: 600;
+    line-height: 1.2;
   }
-  .subtitle { color: var(--text-dim); font-size: 0.85rem; margin: 10px 0 18px; max-width: 72ch; }
+  .brand-text .brand-name { font-size: 0.92rem; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; }
 
-  .tab-nav {
-    display: flex;
-    gap: 4px;
-    flex-wrap: wrap;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 18px;
-    padding-bottom: 2px;
+  /* ---- Connect (pre-login) screen ---- */
+  #connectPanel {
+    max-width: 420px;
+    margin: 60px auto 0;
+    padding: 28px 28px 24px;
   }
-  .tab-nav a {
-    font-size: 0.78rem;
+  #connectPanel.connected { display: none; }
+  #connectPanel .brand-mark { margin-bottom: 14px; }
+  #connectPanel .row { flex-wrap: nowrap; }
+  #connectPanel input[type="text"] { min-width: 0; flex: 1; }
+
+  /* ---- App shell: sidebar + main ---- */
+  #appShell { display: none; }
+  #appShell.visible { display: flex; min-height: 100vh; align-items: stretch; }
+
+  .sidebar {
+    flex: none;
+    width: 216px;
+    background: var(--card-bg);
+    border-right: 1px solid var(--border);
+    padding: 20px 14px;
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    height: 100vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  .sidebar .brand-row { padding: 0 8px; margin-bottom: 22px; }
+  .sidebar nav { display: flex; flex-direction: column; gap: 2px; }
+  .sidebar nav a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 0.82rem;
     font-weight: 600;
     color: var(--text-dim);
     text-decoration: none;
-    padding: 7px 12px;
-    border-radius: 999px 999px 0 0;
-    border-bottom: 2px solid transparent;
-    transition: color 0.15s ease, background 0.15s ease;
+    transition: background 0.15s ease, color 0.15s ease;
   }
-  .tab-nav a:hover { color: var(--text); background: var(--accent-soft); }
-  .tab-nav a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .tab-nav a.active { color: var(--text); background: var(--accent-soft); border-bottom-color: var(--accent); }
+  .sidebar nav a svg { flex: none; color: inherit; }
+  .sidebar nav a:hover { background: var(--accent-soft); color: var(--text); }
+  .sidebar nav a.active { background: var(--accent-soft); color: var(--accent-strong); }
+  .sidebar nav a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .sidebar-footer {
+    margin-top: auto;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+  .sidebar-footer .muted { display: block; margin-bottom: 8px; font-size: 0.74rem; }
+  .sidebar-footer button { width: 100%; }
+
+  .main { flex: 1; min-width: 0; padding: 22px 28px 72px; }
+  .topbar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .topbar-title h1 { font-size: 1.05rem; margin: 0; font-weight: 700; }
+  .topbar-title .muted { margin-top: 2px; }
+  .merchant-block { text-align: right; }
+  .merchant-block .merchant-name { font-weight: 700; font-size: 0.92rem; }
+  .merchant-block .merchant-meta { margin-top: 4px; display: flex; align-items: center; gap: 10px; justify-content: flex-end; }
+
+  @media (max-width: 760px) {
+    #appShell.visible { flex-direction: column; min-height: 0; }
+    .sidebar {
+      position: static;
+      width: 100%;
+      height: auto;
+      flex-direction: row;
+      align-items: center;
+      overflow-x: auto;
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+      padding: 10px 14px;
+    }
+    .sidebar .brand-row { display: none; }
+    .sidebar nav { flex-direction: row; }
+    .sidebar-footer { margin-top: 0; margin-left: auto; padding-top: 0; border-top: none; }
+    .main { padding: 18px 16px 60px; }
+    .merchant-block { text-align: left; }
+    .merchant-block .merchant-meta { justify-content: flex-start; }
+  }
 
   .card {
     background: var(--card-bg);
@@ -132,6 +190,25 @@
     margin: 0 0 14px;
     font-family: var(--font-mono);
   }
+  .card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .card-head h2 { margin: 0; }
+
+  .search-wrap { position: relative; display: inline-flex; align-items: center; }
+  .search-wrap svg { position: absolute; left: 10px; color: var(--text-dim); pointer-events: none; }
+  .search-input {
+    padding-left: 30px !important;
+    width: 230px;
+    max-width: 100%;
+    min-width: 0 !important;
+  }
+
   .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
   input, select, button {
     font: inherit;
@@ -192,17 +269,22 @@
   .muted { color: var(--text-dim); font-size: 0.8rem; }
   .top-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   @media (max-width: 700px) { .top-grid { grid-template-columns: 1fr; } }
-  #connectPanel.connected { display: none; }
-  #connectPanel {
-    max-width: 420px;
-    margin: 60px auto 0;
-    padding: 28px 28px 24px;
+
+  /* ---- Actions card ---- */
+  .actions-card { background: linear-gradient(180deg, var(--accent-soft), var(--card-bg) 65%); }
+  .field-grid { display: flex; gap: 18px; flex-wrap: wrap; align-items: flex-end; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field-grow { flex: 1; min-width: 240px; }
+  .field-label {
+    font-family: var(--font-mono);
+    font-size: 0.64rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-dim);
   }
-  #connectPanel .brand-mark { margin-bottom: 14px; }
-  #connectPanel .row { flex-wrap: nowrap; }
-  #connectPanel input[type="text"] { min-width: 0; flex: 1; }
-  #mainPanels { display: none; }
-  #mainPanels.visible { display: block; }
+  .field input, .field select { background: var(--card-bg); }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+
   code {
     font-family: var(--font-mono);
     font-size: 0.78rem;
@@ -212,25 +294,9 @@
   }
   .actions-cell { display: flex; gap: 6px; flex-wrap: wrap; }
   .actions-cell button, .actions-cell select { padding: 5px 10px; font-size: 0.75rem; }
-  .petal { fill: var(--accent); }
 </style>
 </head>
 <body>
-  <div class="brand-row">
-    <svg class="brand-mark" viewBox="0 0 48 48" width="28" height="28" aria-hidden="true">
-      <ellipse class="petal" cx="24" cy="12" rx="4.4" ry="10" opacity="1" transform="rotate(0 24 24)"/>
-      <ellipse class="petal" cx="24" cy="12" rx="4.4" ry="10" opacity="0.82" transform="rotate(60 24 24)"/>
-      <ellipse class="petal" cx="24" cy="12" rx="4.4" ry="10" opacity="0.64" transform="rotate(120 24 24)"/>
-      <ellipse class="petal" cx="24" cy="12" rx="4.4" ry="10" opacity="0.48" transform="rotate(180 24 24)"/>
-      <ellipse class="petal" cx="24" cy="12" rx="4.4" ry="10" opacity="0.34" transform="rotate(240 24 24)"/>
-      <ellipse class="petal" cx="24" cy="12" rx="4.4" ry="10" opacity="0.22" transform="rotate(300 24 24)"/>
-    </svg>
-    <div class="brand-text">
-      <div class="eyebrow">Fractal Pay</div>
-      <h1>Merchant API Dashboard</h1>
-    </div>
-  </div>
-  <p class="subtitle">Live view of the merchant-layer prototype: orders, COD risk, transactions and returns, webhook deliveries, reconciliation, funding, and customer notifications.</p>
 
   <div class="card" id="connectPanel">
     <svg class="brand-mark" viewBox="0 0 48 48" width="34" height="34" aria-hidden="true">
@@ -249,161 +315,247 @@
     <p class="muted" id="connectStatus" style="margin-top:10px;"></p>
   </div>
 
-  <div id="mainPanels">
-    <nav class="tab-nav" id="tabNav">
-      <a href="#section-orders">Orders</a>
-      <a href="#section-transactions">Transactions</a>
-      <a href="#section-reconciliation">Reconciliation</a>
-      <a href="#section-funding">Funding</a>
-      <a href="#section-notifications">Notifications</a>
-      <a href="#section-reports">Reports</a>
-      <a href="#section-webhooks">Webhooks</a>
-    </nav>
-
-    <div class="card">
-      <div class="row" style="justify-content: space-between;">
-        <div>
-          <strong id="merchantName"></strong>
+  <div id="appShell">
+    <aside class="sidebar">
+      <div class="brand-row">
+        <svg class="brand-mark" viewBox="0 0 48 48" width="26" height="26" aria-hidden="true">
+          <ellipse class="petal" cx="24" cy="12" rx="4.4" ry="10" opacity="1" transform="rotate(0 24 24)"/>
+          <ellipse class="petal" cx="24" cy="12" rx="4.4" ry="10" opacity="0.82" transform="rotate(60 24 24)"/>
+          <ellipse class="petal" cx="24" cy="12" rx="4.4" ry="10" opacity="0.64" transform="rotate(120 24 24)"/>
+          <ellipse class="petal" cx="24" cy="12" rx="4.4" ry="10" opacity="0.48" transform="rotate(180 24 24)"/>
+          <ellipse class="petal" cx="24" cy="12" rx="4.4" ry="10" opacity="0.34" transform="rotate(240 24 24)"/>
+          <ellipse class="petal" cx="24" cy="12" rx="4.4" ry="10" opacity="0.22" transform="rotate(300 24 24)"/>
+        </svg>
+        <div class="brand-text">
+          <div class="eyebrow">Fractal Pay</div>
+          <div class="brand-name">Merchant API</div>
         </div>
+      </div>
+      <nav id="sideNav">
+        <a href="#section-orders">
+          <svg viewBox="0 0 24 24" width="17" height="17" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="6" y="4" width="12" height="17" rx="2"/><rect x="9" y="2.3" width="6" height="3" rx="1"/>
+            <line x1="8.5" y1="10.5" x2="15.5" y2="10.5"/><line x1="8.5" y1="14.5" x2="15.5" y2="14.5"/>
+          </svg>
+          Orders
+        </a>
+        <a href="#section-transactions">
+          <svg viewBox="0 0 24 24" width="17" height="17" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 8h13"/><path d="M14 5l3 3-3 3"/><path d="M20 16H7"/><path d="M10 13l-3 3 3 3"/>
+          </svg>
+          Transactions
+        </a>
+        <a href="#section-reconciliation">
+          <svg viewBox="0 0 24 24" width="17" height="17" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="8.5"/><path d="M8 12.5l2.7 2.7L16 9.5"/>
+          </svg>
+          Reconciliation
+        </a>
+        <a href="#section-funding">
+          <svg viewBox="0 0 24 24" width="17" height="17" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="8.5"/>
+            <text x="12" y="15.3" text-anchor="middle" font-size="9.5" font-weight="700" fill="currentColor" stroke="none">$</text>
+          </svg>
+          Funding
+        </a>
+        <a href="#section-notifications">
+          <svg viewBox="0 0 24 24" width="17" height="17" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 5a4 4 0 0 0-4 4v2.5c0 1.3-.5 2.5-1.4 3.5h10.8c-.9-1-1.4-2.2-1.4-3.5V9a4 4 0 0 0-4-4Z"/>
+            <path d="M10 18a2 2 0 0 0 4 0"/>
+          </svg>
+          Notifications
+        </a>
+        <a href="#section-reports">
+          <svg viewBox="0 0 24 24" width="17" height="17" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="6" y1="18" x2="6" y2="12"/><line x1="12" y1="18" x2="12" y2="7"/><line x1="18" y1="18" x2="18" y2="14.5"/>
+          </svg>
+          Reports
+        </a>
+        <a href="#section-webhooks">
+          <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
+            <path d="M13 3 7 13h4l-1 8 7-11h-4l1-7Z" fill="currentColor" stroke="none"/>
+          </svg>
+          Webhooks
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <span class="muted">Auto-refresh: <span id="refreshIndicator">on</span></span>
+        <button class="secondary" id="disconnectBtn">Disconnect</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div class="topbar-title">
+          <h1>Merchant API Dashboard</h1>
+          <p class="muted">Live view of the merchant-layer prototype: orders, COD risk, transactions and returns,
+            webhook deliveries, reconciliation, funding, and customer notifications.</p>
+        </div>
+        <div class="merchant-block">
+          <div class="merchant-name" id="merchantName"></div>
+        </div>
+      </div>
+
+      <div class="card actions-card">
+        <h2>Actions</h2>
+        <div class="field-grid">
+          <div class="field">
+            <label class="field-label" for="newOrderType">Order type</label>
+            <select id="newOrderType">
+              <option value="cod">cod</option>
+              <option value="invoice">invoice</option>
+              <option value="prepaid">prepaid</option>
+            </select>
+          </div>
+          <div class="field field-grow">
+            <label class="field-label" for="newOrderCustomerName">Customer name (optional)</label>
+            <input id="newOrderCustomerName" type="text" placeholder="Try HOLD-... or DECLINE-... to force a COD outcome" />
+          </div>
+          <div class="field">
+            <label class="field-label">&nbsp;</label>
+            <button id="simulateCaSyncBtn">Simulate Command Alkon order sync</button>
+          </div>
+        </div>
+        <hr class="divider" />
+        <div class="field-grid">
+          <div class="field">
+            <label class="field-label">&nbsp;</label>
+            <button id="simulateFundingBtn" class="secondary">Run nightly funding batch</button>
+          </div>
+        </div>
+        <p class="muted" style="margin-top:14px;">
+          Tip: a customer name starting with <code>HOLD-</code> or <code>DECLINE-</code> forces that COD outcome
+          deterministically. Leave the field blank to get a random seeded customer instead.
+        </p>
+      </div>
+
+      <div class="card" id="section-orders">
+        <div class="card-head">
+          <h2>Orders</h2>
+          <div class="search-wrap">
+            <svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="1.8" fill="none"/><line x1="13.5" y1="13.5" x2="18" y2="18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <input class="search-input" id="ordersSearch" type="text" placeholder="Search customer or order ID" />
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>ID</th><th>Customer</th><th>Type</th><th>Amount</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="ordersBody"></tbody>
+          </table>
+        </div>
+        <p class="muted" style="margin-top:8px;">
+          These orders stand in for what Command Cloud would normally hand off once a delivery is ready to bill.
+          For COD orders, "COD check" runs a simulated pre-delivery payment verification, and "Dispatch" is blocked
+          until that check clears, modeling a merchant confirming payment is collectible before a truck rolls.
+          "Simulate payment" then mimics the customer actually paying, which is what drives the reconciliation,
+          funding, and notification sections below.
+        </p>
+      </div>
+
+      <div class="card" id="section-transactions">
+        <div class="card-head">
+          <h2>Transactions</h2>
+          <div class="search-wrap">
+            <svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="1.8" fill="none"/><line x1="13.5" y1="13.5" x2="18" y2="18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <input class="search-input" id="transactionsSearch" type="text" placeholder="Search order, transaction ID, or method" />
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>ID</th><th>Order</th><th>Method</th><th>Amount</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="transactionsBody"></tbody>
+          </table>
+        </div>
+        <p class="muted" style="margin-top:8px;">
+          "Simulate return" mimics money coming back after a payment already succeeded, such as an ACH return
+          (e.g. insufficient funds) or a card chargeback (e.g. cardholder dispute), distinct from a merchant-initiated
+          refund. It reopens the linked invoice and fires a <code>payment.returned</code> webhook.
+        </p>
+      </div>
+
+      <div class="top-grid">
+        <div class="card" id="section-reconciliation">
+          <h2>Reconciliation</h2>
+          <div class="stat-grid" id="reconciliationStats"></div>
+        </div>
+        <div class="card" id="section-funding">
+          <h2>Funding</h2>
+          <div class="stat-grid" id="fundingStats"></div>
+        </div>
+      </div>
+
+      <div class="card" id="section-notifications">
+        <h2>Customer notifications</h2>
+        <p class="muted">
+          Simulates a merchant alerting one specific customer directly by email or SMS when something happens on
+          their order — separate from the webhook log below, which is for the merchant's own systems.
+        </p>
         <div class="row">
-          <span class="muted">Auto-refresh: <span id="refreshIndicator">on</span></span>
-          <button class="secondary" id="disconnectBtn">Disconnect</button>
+          <select id="notifCustomer"></select>
+          <select id="notifChannel">
+            <option value="email">email</option>
+            <option value="sms">sms</option>
+          </select>
+          <input id="notifDestination" type="text" placeholder="email@customer.com or +15551234567" />
+          <select id="notifEvent">
+            <option value="payment.succeeded">when payment succeeds</option>
+            <option value="payment.returned">when payment is returned</option>
+            <option value="payment.failed">when payment fails</option>
+            <option value="payment.refunded">when payment is refunded</option>
+          </select>
+          <button id="addNotifRuleBtn">Add notification</button>
+        </div>
+        <div class="table-wrap" style="margin-top:12px;">
+          <table>
+            <thead>
+              <tr><th>Customer</th><th>Channel</th><th>Destination</th><th>Event</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="notifRulesBody"></tbody>
+          </table>
+        </div>
+        <h2 style="margin-top:18px;">Notification log</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Event</th><th>Channel</th><th>Destination</th><th>Message</th><th>Sent</th></tr>
+            </thead>
+            <tbody id="notifLogBody"></tbody>
+          </table>
         </div>
       </div>
-    </div>
 
-    <div class="card">
-      <h2>Actions</h2>
-      <div class="row">
-        <select id="newOrderType">
-          <option value="cod">cod</option>
-          <option value="invoice">invoice</option>
-          <option value="prepaid">prepaid</option>
-        </select>
-        <input id="newOrderCustomerName" type="text" placeholder="Customer name (optional — try HOLD-... or DECLINE-...)" />
-        <button id="simulateCaSyncBtn">Simulate Command Alkon order sync</button>
-        <button id="simulateFundingBtn" class="secondary">Run nightly funding batch</button>
+      <div class="card" id="section-reports">
+        <h2>Reports</h2>
+        <p class="muted">
+          A consolidated business summary for a date range, covering orders, COD risk, payments, returns and
+          chargebacks, funding, and reconciliation all in one place. Shown below for the last 7 days by default;
+          change the range and generate again, or download it as a CSV.
+        </p>
+        <div class="row">
+          <label class="muted">From <input id="reportFrom" type="date" /></label>
+          <label class="muted">To <input id="reportTo" type="date" /></label>
+          <button id="generateReportBtn">Generate report</button>
+          <button id="downloadReportCsvBtn" class="secondary">Download CSV</button>
+        </div>
+        <div id="reportOutput"></div>
       </div>
-      <p class="muted" style="margin-top:8px;">
-        Tip: a customer name starting with <code>HOLD-</code> or <code>DECLINE-</code> forces that COD outcome
-        deterministically. Leave the field blank to get a random seeded customer instead.
-      </p>
-    </div>
 
-    <div class="card" id="section-orders">
-      <h2>Orders</h2>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr><th>ID</th><th>Customer</th><th>Type</th><th>Amount</th><th>Status</th><th>Actions</th></tr>
-          </thead>
-          <tbody id="ordersBody"></tbody>
-        </table>
+      <div class="card" id="section-webhooks">
+        <h2>Webhook deliveries</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Event</th><th>Status</th><th>HTTP</th><th>Attempts</th><th>Created</th></tr>
+            </thead>
+            <tbody id="deliveriesBody"></tbody>
+          </table>
+        </div>
       </div>
-      <p class="muted" style="margin-top:8px;">
-        These orders stand in for what Command Cloud would normally hand off once a delivery is ready to bill.
-        For COD orders, "COD check" runs a simulated pre-delivery payment verification, and "Dispatch" is blocked
-        until that check clears, modeling a merchant confirming payment is collectible before a truck rolls.
-        "Simulate payment" then mimics the customer actually paying, which is what drives the reconciliation,
-        funding, and notification sections below.
-      </p>
-    </div>
-
-    <div class="card" id="section-transactions">
-      <h2>Transactions</h2>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr><th>ID</th><th>Order</th><th>Method</th><th>Amount</th><th>Status</th><th>Actions</th></tr>
-          </thead>
-          <tbody id="transactionsBody"></tbody>
-        </table>
-      </div>
-      <p class="muted" style="margin-top:8px;">
-        "Simulate return" mimics money coming back after a payment already succeeded, such as an ACH return
-        (e.g. insufficient funds) or a card chargeback (e.g. cardholder dispute), distinct from a merchant-initiated
-        refund. It reopens the linked invoice and fires a <code>payment.returned</code> webhook.
-      </p>
-    </div>
-
-    <div class="top-grid">
-      <div class="card" id="section-reconciliation">
-        <h2>Reconciliation</h2>
-        <div class="stat-grid" id="reconciliationStats"></div>
-      </div>
-      <div class="card" id="section-funding">
-        <h2>Funding</h2>
-        <div class="stat-grid" id="fundingStats"></div>
-      </div>
-    </div>
-
-    <div class="card" id="section-notifications">
-      <h2>Customer notifications</h2>
-      <p class="muted">
-        Simulates a merchant alerting one specific customer directly by email or SMS when something happens on
-        their order — separate from the webhook log below, which is for the merchant's own systems.
-      </p>
-      <div class="row">
-        <select id="notifCustomer"></select>
-        <select id="notifChannel">
-          <option value="email">email</option>
-          <option value="sms">sms</option>
-        </select>
-        <input id="notifDestination" type="text" placeholder="email@customer.com or +15551234567" />
-        <select id="notifEvent">
-          <option value="payment.succeeded">when payment succeeds</option>
-          <option value="payment.returned">when payment is returned</option>
-          <option value="payment.failed">when payment fails</option>
-          <option value="payment.refunded">when payment is refunded</option>
-        </select>
-        <button id="addNotifRuleBtn">Add notification</button>
-      </div>
-      <div class="table-wrap" style="margin-top:12px;">
-        <table>
-          <thead>
-            <tr><th>Customer</th><th>Channel</th><th>Destination</th><th>Event</th><th>Status</th><th>Actions</th></tr>
-          </thead>
-          <tbody id="notifRulesBody"></tbody>
-        </table>
-      </div>
-      <h2 style="margin-top:18px;">Notification log</h2>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr><th>Event</th><th>Channel</th><th>Destination</th><th>Message</th><th>Sent</th></tr>
-          </thead>
-          <tbody id="notifLogBody"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="card" id="section-reports">
-      <h2>Reports</h2>
-      <p class="muted">
-        A consolidated business summary for a date range, covering orders, COD risk, payments, returns and
-        chargebacks, funding, and reconciliation all in one place. Shown below for the last 7 days by default;
-        change the range and generate again, or download it as a CSV.
-      </p>
-      <div class="row">
-        <label class="muted">From <input id="reportFrom" type="date" /></label>
-        <label class="muted">To <input id="reportTo" type="date" /></label>
-        <button id="generateReportBtn">Generate report</button>
-        <button id="downloadReportCsvBtn" class="secondary">Download CSV</button>
-      </div>
-      <div id="reportOutput"></div>
-    </div>
-
-    <div class="card" id="section-webhooks">
-      <h2>Webhook deliveries</h2>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr><th>Event</th><th>Status</th><th>HTTP</th><th>Attempts</th><th>Created</th></tr>
-          </thead>
-          <tbody id="deliveriesBody"></tbody>
-        </table>
-      </div>
-    </div>
+    </main>
   </div>
 
 <script>
@@ -461,7 +613,7 @@ async function connect(key) {
     localStorage.setItem(STORAGE_KEY, key);
     el("connectStatus").textContent = "";
     el("connectPanel").classList.add("connected");
-    el("mainPanels").classList.add("visible");
+    el("appShell").classList.add("visible");
     el("merchantName").textContent = merchant.name;
     await refreshAll();
     if (refreshTimer) clearInterval(refreshTimer);
@@ -485,7 +637,7 @@ function disconnect() {
   localStorage.removeItem(STORAGE_KEY);
   if (refreshTimer) clearInterval(refreshTimer);
   el("connectPanel").classList.remove("connected");
-  el("mainPanels").classList.remove("visible");
+  el("appShell").classList.remove("visible");
 }
 
 async function refreshAll() {
@@ -501,6 +653,9 @@ async function refreshAll() {
 }
 
 let latestOrders = [];
+let ordersSearchQuery = "";
+let latestTransactions = [];
+let transactionsSearchQuery = "";
 
 function populateCustomerSelect() {
   const seen = new Map();
@@ -515,11 +670,15 @@ function populateCustomerSelect() {
   if (previousValue && seen.has(previousValue)) select.value = previousValue;
 }
 
-async function refreshOrders() {
-  const { data } = await apiFetch("/orders?limit=25");
-  latestOrders = data;
-  populateCustomerSelect();
-  const rows = data.map((o) => {
+function renderOrdersRows() {
+  const q = ordersSearchQuery;
+  const filtered = q
+    ? latestOrders.filter(
+        (o) => o.customer_name.toLowerCase().includes(q) || o.id.toLowerCase().includes(q),
+      )
+    : latestOrders;
+
+  const rows = filtered.map((o) => {
     const actions = [];
     if (o.order_type === "cod" && !["dispatched", "delivered"].includes(o.status)) {
       actions.push(
@@ -547,12 +706,30 @@ async function refreshOrders() {
       <td><div class="actions-cell">${actions.join("")}</div></td>
     </tr>`;
   });
-  el("ordersBody").innerHTML = rows.join("") || `<tr><td colspan="6" class="muted">No orders yet.</td></tr>`;
+  el("ordersBody").innerHTML =
+    rows.join("") || `<tr><td colspan="6" class="muted">${q ? "No matching orders." : "No orders yet."}</td></tr>`;
 }
 
-async function refreshTransactions() {
-  const { data } = await apiFetch("/transactions?limit=25");
-  const rows = data.map((t) => {
+async function refreshOrders() {
+  const { data } = await apiFetch("/orders?limit=25");
+  latestOrders = data;
+  populateCustomerSelect();
+  renderOrdersRows();
+}
+
+function renderTransactionsRows() {
+  const q = transactionsSearchQuery;
+  const filtered = q
+    ? latestTransactions.filter(
+        (t) =>
+          t.id.toLowerCase().includes(q) ||
+          (t.order_id ?? "").toLowerCase().includes(q) ||
+          t.payment_method.toLowerCase().includes(q) ||
+          t.status.toLowerCase().includes(q),
+      )
+    : latestTransactions;
+
+  const rows = filtered.map((t) => {
     const actions =
       t.status === "succeeded"
         ? `<button class="secondary" data-action="return" data-txn="${t.id}">Simulate return</button>`
@@ -567,7 +744,14 @@ async function refreshTransactions() {
     </tr>`;
   });
   el("transactionsBody").innerHTML =
-    rows.join("") || `<tr><td colspan="6" class="muted">No transactions yet.</td></tr>`;
+    rows.join("") ||
+    `<tr><td colspan="6" class="muted">${q ? "No matching transactions." : "No transactions yet."}</td></tr>`;
+}
+
+async function refreshTransactions() {
+  const { data } = await apiFetch("/transactions?limit=25");
+  latestTransactions = data;
+  renderTransactionsRows();
 }
 
 async function refreshDeliveries() {
@@ -655,6 +839,16 @@ el("apiKeyInput").addEventListener("keydown", (e) => {
   if (e.key === "Enter") el("connectBtn").click();
 });
 el("disconnectBtn").addEventListener("click", disconnect);
+
+el("ordersSearch").addEventListener("input", () => {
+  ordersSearchQuery = el("ordersSearch").value.trim().toLowerCase();
+  renderOrdersRows();
+});
+
+el("transactionsSearch").addEventListener("input", () => {
+  transactionsSearchQuery = el("transactionsSearch").value.trim().toLowerCase();
+  renderTransactionsRows();
+});
 
 el("simulateCaSyncBtn").addEventListener("click", async () => {
   try {
@@ -858,25 +1052,25 @@ if (savedKey) {
   connect(savedKey);
 }
 
-// Scrollspy: highlight the tab-nav entry for whichever section is in view.
-const tabLinks = Array.from(document.querySelectorAll("#tabNav a"));
-const tabTargets = tabLinks
+// Scrollspy: highlight the sidebar entry for whichever section is in view.
+const navLinks = Array.from(document.querySelectorAll("#sideNav a"));
+const navTargets = navLinks
   .map((a) => document.querySelector(a.getAttribute("href")))
   .filter(Boolean);
-if (tabTargets.length) {
+if (navTargets.length) {
   const spy = new IntersectionObserver(
     (entries) => {
       for (const entry of entries) {
         if (!entry.isIntersecting) continue;
-        const link = tabLinks.find((a) => a.getAttribute("href") === "#" + entry.target.id);
+        const link = navLinks.find((a) => a.getAttribute("href") === "#" + entry.target.id);
         if (!link) continue;
-        tabLinks.forEach((a) => a.classList.remove("active"));
+        navLinks.forEach((a) => a.classList.remove("active"));
         link.classList.add("active");
       }
     },
     { rootMargin: "-20% 0px -70% 0px" },
   );
-  tabTargets.forEach((t) => spy.observe(t));
+  navTargets.forEach((t) => spy.observe(t));
 }
 </script>
 </body>
