@@ -761,9 +761,6 @@ async function refreshReconciliation() {
     <div class="stat"><div class="label">Open invoices</div><div class="value">${r.open_invoice_count}</div></div>
     <div class="stat"><div class="label">Open amount</div><div class="value">${money(r.open_amount_cents)}</div></div>
     <div class="stat"><div class="label">Unmatched txns</div><div class="value">${r.unmatched_transaction_count}</div></div>
-    <div class="stat"><div class="label">Avg time to reconcile</div><div class="value">${
-      r.average_time_to_reconcile_seconds ? Math.round(r.average_time_to_reconcile_seconds) + "s" : "—"
-    }</div></div>
     <div class="stat"><div class="label">Chargebacks</div><div class="value">${r.chargeback_count}</div></div>
     <div class="stat"><div class="label">Chargeback amount</div><div class="value">${money(r.total_chargeback_cents)}</div></div>`;
 }
