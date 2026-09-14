@@ -64,11 +64,13 @@ is scoped to the merchant that owns the key.
 |---|---|
 | Orders | `POST/GET /orders`, `GET /orders/:id`, `PATCH /orders/:id/status` |
 | COD risk | `POST/GET /orders/:id/cod-check`, `POST /orders/:id/dispatch` |
-| Transactions | `POST /transactions`, `GET /transactions`, `GET /transactions/:id`, `POST /transactions/:id/refund` |
+| Transactions | `POST /transactions`, `GET /transactions`, `GET /transactions/:id`, `POST /transactions/:id/refund`, `POST /transactions/:id/return` |
+| Returns | `GET /returns` |
 | Invoices | `POST/GET /invoices`, `GET /invoices/:id`, `POST /invoices/:id/reconcile` |
-| Funding | `GET /funding/batches`, `GET /funding/batches/:id`, `GET /funding/report` |
+| Funding | `GET /funding/batches`, `GET /funding/batches/:id`, `GET /funding/pending`, `GET /funding/report` |
 | Reconciliation | `GET /reconciliation/report`, `GET /reconciliation/unmatched`, `POST /reconciliation/match` |
 | Webhooks | `POST/GET /webhooks/subscriptions`, `GET/PATCH/DELETE /webhooks/subscriptions/:id`, `GET /webhooks/deliveries`, `GET /webhooks/deliveries/:id`, `POST /webhooks/deliveries/:id/retry`, `POST /webhooks/test-ping` |
+| Notifications | `POST/GET /notifications/rules`, `PATCH/DELETE /notifications/rules/:id`, `POST /notifications/rules/:id/test`, `GET /notifications/log` |
 | Simulation (not part of the real surface) | `POST /_demo/simulate-ca-order-sync`, `POST /_demo/simulate-payment`, `POST /_demo/simulate-funding-batch` |
 
 ## Manual curl walkthrough
@@ -102,11 +104,18 @@ outcomes deterministically (see `src/mock/paymentProcessor.ts` and
 `src/tools/codRisk/riskRules.ts`). A transaction `amount_cents` ending in
 `13` deterministically fails at the mock processor.
 
+`POST /transactions/:id/return` simulates money coming back after a payment
+already succeeded — an ACH return (default reason `insufficient_funds`) or a
+card chargeback (default reason `cardholder_dispute`) — distinct from a
+merchant-initiated refund. It reopens any invoice the payment had reconciled,
+fires a `payment.returned` webhook, and shows up in `GET /funding/report`'s
+`total_returned_cents`.
+
 ## Webhooks
 
 Events: `order.created`, `order.dispatched`, `payment.succeeded`,
-`payment.failed`, `payment.refunded`, `invoice.created`, `invoice.reconciled`,
-`cod.risk.updated`, `funding.batch.deposited`.
+`payment.failed`, `payment.refunded`, `payment.returned`, `invoice.created`,
+`invoice.reconciled`, `cod.risk.updated`, `funding.batch.deposited`.
 
 Deliveries are signed Stripe-style:
 
@@ -125,9 +134,11 @@ with backoff (3s/15s/60s) up to 5 attempts, then move to `exhausted`;
 - `src/webhooks/` — event bus, dispatcher, HMAC signer, delivery worker
 - `src/tools/reconciliation/` — auto-matches payments to invoices
 - `src/tools/codRisk/` — pre-dispatch payment verification + risk policy
-- `src/mock/` — simulated payment processor and Command Alkon order sync
+- `src/tools/notifications/` — per-customer email/SMS alerts layered on the event bus
+- `src/mock/` — simulated payment processor, notifier, and Command Alkon order sync
 - `src/db/` — SQLite schema and repositories
 - `scripts/` — `seed.ts`, `demo.ts`, `webhook-receiver.ts`
+- `public/index.html` — the live dashboard served at `/`
 
 ## Tests
 

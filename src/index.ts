@@ -9,6 +9,7 @@ import { errorHandler } from "./middleware/errorHandler.js";
 import { startDispatcher } from "./webhooks/dispatcher.js";
 import { startWebhookWorker } from "./webhooks/worker.js";
 import { startReconciliationService } from "./tools/reconciliation/reconciliationService.js";
+import { startNotificationService } from "./tools/notifications/notificationService.js";
 import { logger } from "./utils/logger.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -16,6 +17,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 getDb();
 startDispatcher();
 startReconciliationService();
+startNotificationService();
 startWebhookWorker();
 
 const app = express();

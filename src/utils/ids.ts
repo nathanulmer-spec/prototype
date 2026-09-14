@@ -12,7 +12,10 @@ export type IdPrefix =
   | "whs"
   | "whd"
   | "cod"
-  | "evt";
+  | "evt"
+  | "ret"
+  | "ntr"
+  | "ntl";
 
 export function makeId(prefix: IdPrefix): string {
   return `${prefix}_${generate()}`;

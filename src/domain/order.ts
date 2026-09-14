@@ -1,4 +1,4 @@
-export type OrderType = "cod" | "invoice_terms" | "prepaid";
+export type OrderType = "cod" | "invoice" | "prepaid";
 
 export type OrderStatus =
   | "created"

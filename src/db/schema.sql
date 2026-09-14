@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS orders (
   material_description TEXT NOT NULL,
   amount_due_cents INTEGER NOT NULL,
   currency TEXT NOT NULL DEFAULT 'usd',
-  order_type TEXT NOT NULL CHECK (order_type IN ('cod', 'invoice_terms', 'prepaid')),
+  order_type TEXT NOT NULL CHECK (order_type IN ('cod', 'invoice', 'prepaid')),
   status TEXT NOT NULL DEFAULT 'created' CHECK (status IN (
     'created', 'cod_check_pending', 'cod_cleared', 'cod_hold',
     'dispatched', 'delivered', 'invoiced', 'paid', 'cancelled'
@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS transactions (
   payment_method TEXT NOT NULL CHECK (payment_method IN ('card', 'ach')),
   payment_method_last4 TEXT,
   status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN (
-    'pending', 'succeeded', 'failed', 'refunded', 'partially_refunded'
+    'pending', 'succeeded', 'failed', 'refunded', 'partially_refunded', 'returned'
   )),
   failure_reason TEXT,
   processor_reference TEXT,
@@ -113,6 +113,43 @@ CREATE TABLE IF NOT EXISTS webhook_deliveries (
 );
 CREATE INDEX IF NOT EXISTS idx_webhook_deliveries_merchant ON webhook_deliveries(merchant_id);
 CREATE INDEX IF NOT EXISTS idx_webhook_deliveries_status_next ON webhook_deliveries(status, next_attempt_at);
+
+CREATE TABLE IF NOT EXISTS returns (
+  id TEXT PRIMARY KEY,
+  merchant_id TEXT NOT NULL REFERENCES merchants(id),
+  transaction_id TEXT NOT NULL REFERENCES transactions(id),
+  amount_cents INTEGER NOT NULL,
+  reason TEXT NOT NULL,
+  returned_at TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_returns_merchant ON returns(merchant_id);
+CREATE INDEX IF NOT EXISTS idx_returns_transaction ON returns(transaction_id);
+
+CREATE TABLE IF NOT EXISTS notification_rules (
+  id TEXT PRIMARY KEY,
+  merchant_id TEXT NOT NULL REFERENCES merchants(id),
+  customer_id TEXT NOT NULL,
+  customer_name TEXT NOT NULL,
+  channel TEXT NOT NULL CHECK (channel IN ('email', 'sms')),
+  destination TEXT NOT NULL,
+  event_type TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'disabled')),
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_notification_rules_merchant ON notification_rules(merchant_id);
+
+CREATE TABLE IF NOT EXISTS notification_log (
+  id TEXT PRIMARY KEY,
+  merchant_id TEXT NOT NULL REFERENCES merchants(id),
+  rule_id TEXT NOT NULL REFERENCES notification_rules(id),
+  event_type TEXT NOT NULL,
+  channel TEXT NOT NULL,
+  destination TEXT NOT NULL,
+  message TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_notification_log_merchant ON notification_log(merchant_id);
 
 CREATE TABLE IF NOT EXISTS cod_checks (
   id TEXT PRIMARY KEY,

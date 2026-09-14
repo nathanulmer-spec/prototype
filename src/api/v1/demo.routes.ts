@@ -18,7 +18,7 @@ import { ApiError } from "../../middleware/errorHandler.js";
 export const demoRouter = Router();
 
 const caSyncSchema = z.object({
-  order_type: z.enum(["cod", "invoice_terms", "prepaid"]).optional(),
+  order_type: z.enum(["cod", "invoice", "prepaid"]).optional(),
   customer_name: z.string().optional(),
   amount_due_cents: z.number().int().positive().optional(),
 });

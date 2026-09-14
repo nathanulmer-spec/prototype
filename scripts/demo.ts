@@ -55,11 +55,11 @@ async function main() {
   const codHoldOrder = ordersRepo
     .list(merchant.id, { limit: 50 })
     .find((o) => o.order_type === "cod" && o.amount_due_cents >= 500_000);
-  const invoiceTermsOrder = ordersRepo
+  const invoiceOrder = ordersRepo
     .list(merchant.id, { limit: 50 })
-    .find((o) => o.order_type === "invoice_terms");
+    .find((o) => o.order_type === "invoice");
 
-  if (!codClearedOrder || !codHoldOrder || !invoiceTermsOrder) {
+  if (!codClearedOrder || !codHoldOrder || !invoiceOrder) {
     console.error("Expected seeded orders were not found. Run `npm run seed` first.");
     process.exit(1);
   }
@@ -98,7 +98,7 @@ async function main() {
 
   banner("6. Simulate payment against the invoice-terms order");
   const payment = await call(merchant.api_key, "POST", "/_demo/simulate-payment", {
-    order_id: invoiceTermsOrder.id,
+    order_id: invoiceOrder.id,
     payment_method: "ach",
   });
   console.log(`Transaction ${payment.json.id} -> ${payment.json.status}`);
@@ -113,7 +113,7 @@ async function main() {
   banner("8. Invoice auto-reconciliation check");
   const targetInvoice = invoicesRepo
     .list(merchant.id, { limit: 50 })
-    .find((i) => i.order_id === invoiceTermsOrder.id);
+    .find((i) => i.order_id === invoiceOrder.id);
   console.log(`Invoice ${targetInvoice?.id}: status = ${targetInvoice?.status}, paid = ${targetInvoice?.amount_paid_cents}/${targetInvoice?.amount_due_cents} cents`);
 
   banner("9. Reconciliation report");

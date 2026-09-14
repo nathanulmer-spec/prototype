@@ -1,5 +1,6 @@
 import { getDb } from "../../db/client.js";
 import { transactionsRepo } from "../../db/repositories/transactions.repo.js";
+import { returnsRepo } from "../../db/repositories/returns.repo.js";
 
 export interface ReconciliationReport {
   reconciled_invoice_count: number;
@@ -9,6 +10,8 @@ export interface ReconciliationReport {
   unmatched_transaction_count: number;
   unmatched_amount_cents: number;
   average_time_to_reconcile_seconds: number | null;
+  chargeback_count: number;
+  total_chargeback_cents: number;
 }
 
 export function buildReconciliationReport(merchantId: string): ReconciliationReport {
@@ -40,6 +43,8 @@ export function buildReconciliationReport(merchantId: string): ReconciliationRep
   const unmatched = transactionsRepo.listUnmatched(merchantId);
   const unmatchedAmountCents = unmatched.reduce((sum, t) => sum + t.amount_cents, 0);
 
+  const chargebacks = returnsRepo.chargebacksReport(merchantId);
+
   return {
     reconciled_invoice_count: reconciled.count,
     reconciled_amount_cents: reconciled.total_cents,
@@ -48,5 +53,7 @@ export function buildReconciliationReport(merchantId: string): ReconciliationRep
     unmatched_transaction_count: unmatched.length,
     unmatched_amount_cents: unmatchedAmountCents,
     average_time_to_reconcile_seconds: avgSecondsRow.avg_seconds,
+    chargeback_count: chargebacks.chargeback_count,
+    total_chargeback_cents: chargebacks.total_chargeback_cents,
   };
 }

@@ -133,6 +133,39 @@ export const invoicesRepo = {
     return this.findById(merchantId, id);
   },
 
+  revertPayment(
+    merchantId: string,
+    id: string,
+    amountCents: number,
+    transactionId: string,
+  ): Invoice | undefined {
+    const db = getDb();
+    const invoice = this.findById(merchantId, id);
+    if (!invoice) return undefined;
+
+    const now = new Date().toISOString();
+    const newPaidCents = Math.max(0, invoice.amount_paid_cents - amountCents);
+    const status: InvoiceStatus = newPaidCents <= 0 ? "open" : "partially_paid";
+    const clearReconciliation = invoice.reconciled_transaction_id === transactionId;
+
+    db.prepare(
+      `UPDATE invoices
+       SET amount_paid_cents = ?, status = ?, updated_at = ?,
+           reconciled_at = CASE WHEN ? THEN NULL ELSE reconciled_at END,
+           reconciled_transaction_id = CASE WHEN ? THEN NULL ELSE reconciled_transaction_id END
+       WHERE id = ? AND merchant_id = ?`,
+    ).run(
+      newPaidCents,
+      status,
+      now,
+      clearReconciliation ? 1 : 0,
+      clearReconciliation ? 1 : 0,
+      id,
+      merchantId,
+    );
+    return this.findById(merchantId, id);
+  },
+
   markReconciled(merchantId: string, id: string, transactionId: string): Invoice | undefined {
     const db = getDb();
     const now = new Date().toISOString();

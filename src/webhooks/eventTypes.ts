@@ -4,6 +4,7 @@ export const WEBHOOK_EVENT_TYPES = [
   "payment.succeeded",
   "payment.failed",
   "payment.refunded",
+  "payment.returned",
   "invoice.created",
   "invoice.reconciled",
   "cod.risk.updated",

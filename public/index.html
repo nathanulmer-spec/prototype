@@ -102,7 +102,7 @@
 </head>
 <body>
   <h1>Fractal Pay — Merchant API Dashboard</h1>
-  <p class="subtitle">Live view of the merchant-layer prototype: orders, COD risk, webhook deliveries, reconciliation and funding.</p>
+  <p class="subtitle">Live view of the merchant-layer prototype: orders, COD risk, transactions and returns, webhook deliveries, reconciliation, funding, and customer notifications.</p>
 
   <div class="card" id="connectPanel">
     <h2>Connect</h2>
@@ -118,7 +118,6 @@
       <div class="row" style="justify-content: space-between;">
         <div>
           <strong id="merchantName"></strong>
-          <span class="muted" id="merchantId"></span>
         </div>
         <div class="row">
           <span class="muted">Auto-refresh: <span id="refreshIndicator">on</span></span>
@@ -132,14 +131,16 @@
       <div class="row">
         <select id="newOrderType">
           <option value="cod">cod</option>
-          <option value="invoice_terms">invoice_terms</option>
+          <option value="invoice">invoice</option>
           <option value="prepaid">prepaid</option>
         </select>
+        <input id="newOrderCustomerName" type="text" placeholder="Customer name (optional — try HOLD-... or DECLINE-...)" />
         <button id="simulateCaSyncBtn">Simulate Command Alkon order sync</button>
         <button id="simulateFundingBtn" class="secondary">Run nightly funding batch</button>
       </div>
       <p class="muted" style="margin-top:8px;">
-        Tip: a customer name starting with <code>HOLD-</code> or <code>DECLINE-</code> forces that COD outcome deterministically.
+        Tip: a customer name starting with <code>HOLD-</code> or <code>DECLINE-</code> forces that COD outcome
+        deterministically. Leave the field blank to get a random seeded customer instead.
       </p>
     </div>
 
@@ -153,6 +154,30 @@
           <tbody id="ordersBody"></tbody>
         </table>
       </div>
+      <p class="muted" style="margin-top:8px;">
+        These orders stand in for what Command Cloud would normally hand off once a delivery is ready to bill.
+        For COD orders, "COD check" runs a simulated pre-delivery payment verification, and "Dispatch" is blocked
+        until that check clears, modeling a merchant confirming payment is collectible before a truck rolls.
+        "Simulate payment" then mimics the customer actually paying, which is what drives the reconciliation,
+        funding, and notification sections below.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Transactions</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>ID</th><th>Order</th><th>Method</th><th>Amount</th><th>Status</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="transactionsBody"></tbody>
+        </table>
+      </div>
+      <p class="muted" style="margin-top:8px;">
+        "Simulate return" mimics money coming back after a payment already succeeded, such as an ACH return
+        (e.g. insufficient funds) or a card chargeback (e.g. cardholder dispute), distinct from a merchant-initiated
+        refund. It reopens the linked invoice and fires a <code>payment.returned</code> webhook.
+      </p>
     </div>
 
     <div class="top-grid">
@@ -164,6 +189,61 @@
         <h2>Funding</h2>
         <div class="stat-grid" id="fundingStats"></div>
       </div>
+    </div>
+
+    <div class="card">
+      <h2>Customer notifications</h2>
+      <p class="muted">
+        Simulates a merchant alerting one specific customer directly by email or SMS when something happens on
+        their order — separate from the webhook log below, which is for the merchant's own systems.
+      </p>
+      <div class="row">
+        <select id="notifCustomer"></select>
+        <select id="notifChannel">
+          <option value="email">email</option>
+          <option value="sms">sms</option>
+        </select>
+        <input id="notifDestination" type="text" placeholder="email@customer.com or +15551234567" />
+        <select id="notifEvent">
+          <option value="payment.succeeded">when payment succeeds</option>
+          <option value="payment.returned">when payment is returned</option>
+          <option value="payment.failed">when payment fails</option>
+          <option value="payment.refunded">when payment is refunded</option>
+        </select>
+        <button id="addNotifRuleBtn">Add notification</button>
+      </div>
+      <div class="table-wrap" style="margin-top:12px;">
+        <table>
+          <thead>
+            <tr><th>Customer</th><th>Channel</th><th>Destination</th><th>Event</th><th>Status</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="notifRulesBody"></tbody>
+        </table>
+      </div>
+      <h2 style="margin-top:18px;">Notification log</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Event</th><th>Channel</th><th>Destination</th><th>Message</th><th>Sent</th></tr>
+          </thead>
+          <tbody id="notifLogBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Reports</h2>
+      <p class="muted">
+        Generate a consolidated business summary for a date range, covering orders, COD risk, payments, returns
+        and chargebacks, funding, and reconciliation all in one place, or download it as a CSV.
+      </p>
+      <div class="row">
+        <label class="muted">From <input id="reportFrom" type="date" /></label>
+        <label class="muted">To <input id="reportTo" type="date" /></label>
+        <button id="generateReportBtn">Generate report</button>
+        <button id="downloadReportCsvBtn" class="secondary">Download CSV</button>
+      </div>
+      <div id="reportOutput"></div>
     </div>
 
     <div class="card">
@@ -198,7 +278,7 @@ function shortId(id) {
 function badgeClass(status) {
   const green = ["cleared", "dispatched", "delivered", "succeeded", "reconciled", "paid", "deposited", "active"];
   const amber = ["pending", "hold", "cod_hold", "cod_check_pending", "partially_paid", "created"];
-  const red = ["declined", "failed", "exhausted", "cancelled", "void", "overdue"];
+  const red = ["declined", "failed", "exhausted", "cancelled", "void", "overdue", "returned"];
   if (green.includes(status)) return "b-green";
   if (amber.includes(status)) return "b-amber";
   if (red.includes(status)) return "b-red";
@@ -232,7 +312,6 @@ async function connect(key) {
     el("connectPanel").classList.add("connected");
     el("mainPanels").classList.add("visible");
     el("merchantName").textContent = merchant.name;
-    el("merchantId").textContent = " (" + merchant.id + ")";
     await refreshAll();
     if (refreshTimer) clearInterval(refreshTimer);
     refreshTimer = setInterval(refreshAll, 2000);
@@ -251,13 +330,36 @@ function disconnect() {
 }
 
 async function refreshAll() {
-  await Promise.all([refreshOrders(), refreshDeliveries(), refreshReconciliation(), refreshFunding()]).catch(
-    (err) => console.error(err),
-  );
+  await Promise.all([
+    refreshOrders(),
+    refreshTransactions(),
+    refreshDeliveries(),
+    refreshReconciliation(),
+    refreshFunding(),
+    refreshNotificationRules(),
+    refreshNotificationLog(),
+  ]).catch((err) => console.error(err));
+}
+
+let latestOrders = [];
+
+function populateCustomerSelect() {
+  const seen = new Map();
+  for (const o of latestOrders) {
+    if (!seen.has(o.customer_id)) seen.set(o.customer_id, o.customer_name);
+  }
+  const select = el("notifCustomer");
+  const previousValue = select.value;
+  select.innerHTML = [...seen.entries()]
+    .map(([id, name]) => `<option value="${id}" data-name="${name}">${name}</option>`)
+    .join("");
+  if (previousValue && seen.has(previousValue)) select.value = previousValue;
 }
 
 async function refreshOrders() {
   const { data } = await apiFetch("/orders?limit=25");
+  latestOrders = data;
+  populateCustomerSelect();
   const rows = data.map((o) => {
     const actions = [];
     if (o.order_type === "cod" && !["dispatched", "delivered"].includes(o.status)) {
@@ -289,6 +391,26 @@ async function refreshOrders() {
   el("ordersBody").innerHTML = rows.join("") || `<tr><td colspan="6" class="muted">No orders yet.</td></tr>`;
 }
 
+async function refreshTransactions() {
+  const { data } = await apiFetch("/transactions?limit=25");
+  const rows = data.map((t) => {
+    const actions =
+      t.status === "succeeded"
+        ? `<button class="secondary" data-action="return" data-txn="${t.id}">Simulate return</button>`
+        : "";
+    return `<tr>
+      <td title="${t.id}">${shortId(t.id)}</td>
+      <td title="${t.order_id ?? ""}">${shortId(t.order_id ?? "—")}</td>
+      <td>${t.payment_method}</td>
+      <td>${money(t.amount_cents)}</td>
+      <td>${badge(t.status)}</td>
+      <td><div class="actions-cell">${actions}</div></td>
+    </tr>`;
+  });
+  el("transactionsBody").innerHTML =
+    rows.join("") || `<tr><td colspan="6" class="muted">No transactions yet.</td></tr>`;
+}
+
 async function refreshDeliveries() {
   const { data } = await apiFetch("/webhooks/deliveries?limit=20");
   const rows = data.map(
@@ -314,17 +436,56 @@ async function refreshReconciliation() {
     <div class="stat"><div class="label">Unmatched txns</div><div class="value">${r.unmatched_transaction_count}</div></div>
     <div class="stat"><div class="label">Avg time to reconcile</div><div class="value">${
       r.average_time_to_reconcile_seconds ? Math.round(r.average_time_to_reconcile_seconds) + "s" : "—"
-    }</div></div>`;
+    }</div></div>
+    <div class="stat"><div class="label">Chargebacks</div><div class="value">${r.chargeback_count}</div></div>
+    <div class="stat"><div class="label">Chargeback amount</div><div class="value">${money(r.total_chargeback_cents)}</div></div>`;
 }
 
 async function refreshFunding() {
-  const r = await apiFetch("/funding/report");
+  const [report, pending] = await Promise.all([apiFetch("/funding/report"), apiFetch("/funding/pending")]);
   el("fundingStats").innerHTML = `
-    <div class="stat"><div class="label">Card total</div><div class="value">${money(r.total_card_cents)}</div></div>
-    <div class="stat"><div class="label">ACH total</div><div class="value">${money(r.total_ach_cents)}</div></div>
-    <div class="stat"><div class="label">Fees</div><div class="value">${money(r.total_fee_cents)}</div></div>
-    <div class="stat"><div class="label">Net deposit</div><div class="value">${money(r.total_net_deposit_cents)}</div></div>
-    <div class="stat"><div class="label">Batches</div><div class="value">${r.batch_count}</div></div>`;
+    <div class="stat"><div class="label">Pending card</div><div class="value">${money(pending.card_cents)}</div></div>
+    <div class="stat"><div class="label">Pending ACH</div><div class="value">${money(pending.ach_cents)}</div></div>
+    <div class="stat"><div class="label">Batched card total</div><div class="value">${money(report.total_card_cents)}</div></div>
+    <div class="stat"><div class="label">Batched ACH total</div><div class="value">${money(report.total_ach_cents)}</div></div>
+    <div class="stat"><div class="label">Fees</div><div class="value">${money(report.total_fee_cents)}</div></div>
+    <div class="stat"><div class="label">Net deposit</div><div class="value">${money(report.total_net_deposit_cents)}</div></div>
+    <div class="stat"><div class="label">Returns</div><div class="value">${money(report.total_returned_cents)}</div></div>
+    <div class="stat"><div class="label">Batches</div><div class="value">${report.batch_count}</div></div>`;
+}
+
+async function refreshNotificationRules() {
+  const { data } = await apiFetch("/notifications/rules");
+  const rows = data.map(
+    (r) => `<tr>
+      <td>${r.customer_name}</td>
+      <td>${r.channel}</td>
+      <td>${r.destination}</td>
+      <td>${r.event_type}</td>
+      <td>${badge(r.status)}</td>
+      <td><div class="actions-cell">
+        <button class="secondary" data-action="test-notif" data-rule="${r.id}">Send test</button>
+        <button class="secondary" data-action="delete-notif" data-rule="${r.id}">Delete</button>
+      </div></td>
+    </tr>`,
+  );
+  el("notifRulesBody").innerHTML =
+    rows.join("") || `<tr><td colspan="6" class="muted">No notification rules yet.</td></tr>`;
+}
+
+async function refreshNotificationLog() {
+  const { data } = await apiFetch("/notifications/log?limit=20");
+  const rows = data.map(
+    (n) => `<tr>
+      <td>${n.event_type}</td>
+      <td>${n.channel}</td>
+      <td>${n.destination}</td>
+      <td>${n.message}</td>
+      <td>${new Date(n.created_at).toLocaleTimeString()}</td>
+    </tr>`,
+  );
+  el("notifLogBody").innerHTML =
+    rows.join("") || `<tr><td colspan="5" class="muted">No notifications sent yet.</td></tr>`;
 }
 
 el("connectBtn").addEventListener("click", () => {
@@ -338,7 +499,12 @@ el("disconnectBtn").addEventListener("click", disconnect);
 
 el("simulateCaSyncBtn").addEventListener("click", async () => {
   try {
-    await apiFetch("/_demo/simulate-ca-order-sync", "POST", { order_type: el("newOrderType").value });
+    const customerName = el("newOrderCustomerName").value.trim();
+    await apiFetch("/_demo/simulate-ca-order-sync", "POST", {
+      order_type: el("newOrderType").value,
+      ...(customerName ? { customer_name: customerName } : {}),
+    });
+    el("newOrderCustomerName").value = "";
     await refreshOrders();
   } catch (err) {
     alert(err.message);
@@ -370,6 +536,154 @@ el("ordersBody").addEventListener("click", async (e) => {
       await apiFetch("/_demo/simulate-payment", "POST", { order_id: orderId, payment_method: pm });
     }
     await refreshAll();
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+el("transactionsBody").addEventListener("click", async (e) => {
+  if (e.target.dataset?.action !== "return") return;
+  const txnId = e.target.dataset.txn;
+  try {
+    await apiFetch(`/transactions/${txnId}/return`, "POST", {});
+    await refreshAll();
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+el("addNotifRuleBtn").addEventListener("click", async () => {
+  const select = el("notifCustomer");
+  const customerId = select.value;
+  const customerName = select.selectedOptions[0]?.dataset.name ?? customerId;
+  const destination = el("notifDestination").value.trim();
+  if (!customerId) {
+    alert("No customers yet — sync or create an order first.");
+    return;
+  }
+  if (!destination) {
+    alert("Enter a destination (email address or phone number).");
+    return;
+  }
+  try {
+    await apiFetch("/notifications/rules", "POST", {
+      customer_id: customerId,
+      customer_name: customerName,
+      channel: el("notifChannel").value,
+      destination,
+      event_type: el("notifEvent").value,
+    });
+    el("notifDestination").value = "";
+    await refreshNotificationRules();
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+el("notifRulesBody").addEventListener("click", async (e) => {
+  const action = e.target.dataset?.action;
+  if (!action) return;
+  const ruleId = e.target.dataset.rule;
+  try {
+    if (action === "test-notif") {
+      await apiFetch(`/notifications/rules/${ruleId}/test`, "POST");
+    } else if (action === "delete-notif") {
+      await apiFetch(`/notifications/rules/${ruleId}`, "DELETE");
+    }
+    await refreshNotificationRules();
+    await refreshNotificationLog();
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+function reportDateParams() {
+  const params = new URLSearchParams();
+  const from = el("reportFrom").value;
+  const to = el("reportTo").value;
+  if (from) params.set("from", from);
+  if (to) params.set("to", to);
+  return { from, to, qs: params.toString() };
+}
+
+function renderReport(r) {
+  const section = (title, stats) => `
+    <div style="margin-top:14px;">
+      <div class="muted" style="font-weight:600; margin-bottom:6px;">${title}</div>
+      <div class="stat-grid">${stats
+        .map(([label, value]) => `<div class="stat"><div class="label">${label}</div><div class="value">${value}</div></div>`)
+        .join("")}</div>
+    </div>`;
+
+  return `
+    <p class="muted" style="margin-top:14px;">Range: ${r.range.from ?? "all time"} to ${r.range.to ?? "now"}</p>
+    ${section("Orders", [
+      ["Created", r.orders.created_count],
+      ["Total amount due", money(r.orders.total_amount_due_cents)],
+      ["COD orders", r.orders.by_order_type.cod ?? 0],
+      ["Invoice orders", r.orders.by_order_type.invoice ?? 0],
+      ["Prepaid orders", r.orders.by_order_type.prepaid ?? 0],
+    ])}
+    ${section("COD risk checks", [
+      ["Checks performed", r.cod_risk.checks_performed],
+      ["Cleared", r.cod_risk.cleared_count],
+      ["Hold", r.cod_risk.hold_count],
+      ["Declined", r.cod_risk.declined_count],
+    ])}
+    ${section("Payments", [
+      ["Succeeded", r.payments.succeeded_count],
+      ["Card collected", money(r.payments.succeeded_card_cents)],
+      ["ACH collected", money(r.payments.succeeded_ach_cents)],
+      ["Failed", r.payments.failed_count],
+    ])}
+    ${section("Returns & chargebacks", [
+      ["Total returns", r.returns.total_count],
+      ["Total returned", money(r.returns.total_returned_cents)],
+      ["Chargebacks", r.returns.chargeback_count],
+      ["Chargeback amount", money(r.returns.chargeback_cents)],
+    ])}
+    ${section("Funding", [
+      ["Batches deposited", r.funding.batches_deposited],
+      ["Net deposit", money(r.funding.net_deposit_cents)],
+      ["Fees", money(r.funding.fee_cents)],
+    ])}
+    ${section("Reconciliation", [
+      ["Reconciled in range", r.reconciliation.reconciled_in_range_count],
+      ["Reconciled amount", money(r.reconciliation.reconciled_in_range_cents)],
+      ["Currently open invoices", r.reconciliation.currently_open_invoice_count],
+      ["Currently open amount", money(r.reconciliation.currently_open_amount_cents)],
+      ["Unmatched transactions", r.reconciliation.currently_unmatched_transaction_count],
+    ])}
+    ${section("Notifications", [["Sent", r.notifications_sent]])}
+  `;
+}
+
+el("generateReportBtn").addEventListener("click", async () => {
+  try {
+    const { qs } = reportDateParams();
+    const report = await apiFetch(`/reports/summary${qs ? "?" + qs : ""}`);
+    el("reportOutput").innerHTML = renderReport(report);
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+el("downloadReportCsvBtn").addEventListener("click", async () => {
+  try {
+    const { from, to, qs } = reportDateParams();
+    const res = await fetch(`/api/v1/reports/summary.csv${qs ? "?" + qs : ""}`, {
+      headers: { authorization: "Bearer " + apiKey },
+    });
+    if (!res.ok) throw new Error("Failed to download report");
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `fractalpay-summary${from ? "-" + from : ""}${to ? "-to-" + to : ""}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
   } catch (err) {
     alert(err.message);
   }

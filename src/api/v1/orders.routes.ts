@@ -17,7 +17,7 @@ const createOrderSchema = z.object({
   material_description: z.string().min(1),
   amount_due_cents: z.number().int().positive(),
   currency: z.string().length(3).optional(),
-  order_type: z.enum(["cod", "invoice_terms", "prepaid"]),
+  order_type: z.enum(["cod", "invoice", "prepaid"]),
   requested_delivery_at: z.string().datetime().optional(),
 });
 

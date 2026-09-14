@@ -19,8 +19,8 @@ const { WEBHOOK_EVENT_TYPES } = await import("../src/webhooks/eventTypes.js");
 getDb();
 
 const merchant = merchantsRepo.create({
-  name: "Riverside Ready Mix",
-  legal_name: "Riverside Ready Mix LLC",
+  name: "Fractal Ready Mix & Aggregates",
+  legal_name: "Fractal Ready Mix & Aggregates LLC",
   industry: "ready_mix_concrete",
   api_key: process.env.SEED_API_KEY ?? `sk_test_${randomBytes(16).toString("hex")}`,
 });
@@ -56,7 +56,7 @@ const codOrderLargeFirstTime = ordersRepo.create({
   requested_delivery_at: new Date(Date.now() + 5 * 60 * 60 * 1000).toISOString(),
 });
 
-const invoiceTermsOrder = ordersRepo.create({
+const invoiceOrder = ordersRepo.create({
   merchant_id: merchant.id,
   external_ca_order_number: "CA-100236",
   customer_name: "Riverside Builders LLC",
@@ -64,15 +64,15 @@ const invoiceTermsOrder = ordersRepo.create({
   delivery_address: "1200 Industrial Pkwy",
   material_description: "Crushed Limestone Base - 15 tons",
   amount_due_cents: 65_000,
-  order_type: "invoice_terms",
+  order_type: "invoice",
   requested_delivery_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
 });
 
 const invoice = invoicesRepo.create({
   merchant_id: merchant.id,
-  order_id: invoiceTermsOrder.id,
+  order_id: invoiceOrder.id,
   invoice_number: "INV-5001",
-  amount_due_cents: invoiceTermsOrder.amount_due_cents,
+  amount_due_cents: invoiceOrder.amount_due_cents,
   due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
 });
 
@@ -88,5 +88,5 @@ console.log(`  signing_secret:  ${subscription.signing_secret}`);
 console.log("\nSeeded orders:");
 console.log(`  cod_cleared candidate:      ${codOrderCleared.id} (${codOrderCleared.customer_name}, $${codOrderCleared.amount_due_cents / 100})`);
 console.log(`  cod_hold candidate:         ${codOrderLargeFirstTime.id} (${codOrderLargeFirstTime.customer_name}, $${codOrderLargeFirstTime.amount_due_cents / 100}, no payment history)`);
-console.log(`  invoice_terms + invoice:    ${invoiceTermsOrder.id} / ${invoice.id}`);
+console.log(`  invoice order + invoice: ${invoiceOrder.id} / ${invoice.id}`);
 console.log("\nRun `npm run webhook-receiver` in one terminal and `npm run dev` in another, then `npm run demo`.\n");

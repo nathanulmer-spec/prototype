@@ -5,7 +5,8 @@ export type TransactionStatus =
   | "succeeded"
   | "failed"
   | "refunded"
-  | "partially_refunded";
+  | "partially_refunded"
+  | "returned";
 
 export interface Transaction {
   id: string;
