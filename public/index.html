@@ -234,8 +234,9 @@
     <div class="card">
       <h2>Reports</h2>
       <p class="muted">
-        Generate a consolidated business summary for a date range, covering orders, COD risk, payments, returns
-        and chargebacks, funding, and reconciliation all in one place, or download it as a CSV.
+        A consolidated business summary for a date range, covering orders, COD risk, payments, returns and
+        chargebacks, funding, and reconciliation all in one place. Shown below for the last 7 days by default;
+        change the range and generate again, or download it as a CSV.
       </p>
       <div class="row">
         <label class="muted">From <input id="reportFrom" type="date" /></label>
@@ -303,6 +304,10 @@ async function apiFetch(path, method = "GET", body) {
   return json;
 }
 
+function toDateInputValue(date) {
+  return date.toISOString().slice(0, 10);
+}
+
 async function connect(key) {
   apiKey = key;
   try {
@@ -315,6 +320,14 @@ async function connect(key) {
     await refreshAll();
     if (refreshTimer) clearInterval(refreshTimer);
     refreshTimer = setInterval(refreshAll, 2000);
+
+    if (!el("reportFrom").value && !el("reportTo").value) {
+      const today = new Date();
+      const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      el("reportFrom").value = toDateInputValue(weekAgo);
+      el("reportTo").value = toDateInputValue(today);
+    }
+    await generateReport().catch((err) => console.error(err));
   } catch (err) {
     apiKey = null;
     el("connectStatus").textContent = "Failed to connect: " + err.message;
@@ -658,11 +671,15 @@ function renderReport(r) {
   `;
 }
 
+async function generateReport() {
+  const { qs } = reportDateParams();
+  const report = await apiFetch(`/reports/summary${qs ? "?" + qs : ""}`);
+  el("reportOutput").innerHTML = renderReport(report);
+}
+
 el("generateReportBtn").addEventListener("click", async () => {
   try {
-    const { qs } = reportDateParams();
-    const report = await apiFetch(`/reports/summary${qs ? "?" + qs : ""}`);
-    el("reportOutput").innerHTML = renderReport(report);
+    await generateReport();
   } catch (err) {
     alert(err.message);
   }
