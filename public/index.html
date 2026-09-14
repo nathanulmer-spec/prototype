@@ -68,7 +68,6 @@
   }
 
   .brand-row { display: flex; align-items: center; gap: 10px; }
-  .brand-mark { flex: none; display: block; }
   .brand-text .eyebrow {
     font-family: var(--font-mono);
     font-size: 0.64rem;
@@ -87,7 +86,6 @@
     padding: 28px 28px 24px;
   }
   #connectPanel.connected { display: none; }
-  #connectPanel .brand-mark { margin-bottom: 14px; }
   #connectPanel .row { flex-wrap: nowrap; }
   #connectPanel input[type="text"] { min-width: 0; flex: 1; }
 
@@ -298,19 +296,6 @@
 <body>
 
   <div class="card" id="connectPanel">
-    <svg class="brand-mark" viewBox="0 0 100 100" width="34" height="34" aria-hidden="true">
-      <rect x="2" y="2" width="96" height="96" rx="22" fill="#0a0a0c"/>
-      <g fill="#ffffff">
-        <path d="M50,22 C60,27 64,39 59,49 C55,55 50,55 50,49 Z" transform="rotate(0 50 50)"/>
-        <path d="M50,22 C60,27 64,39 59,49 C55,55 50,55 50,49 Z" transform="rotate(45 50 50)"/>
-        <path d="M50,22 C60,27 64,39 59,49 C55,55 50,55 50,49 Z" transform="rotate(90 50 50)"/>
-        <path d="M50,22 C60,27 64,39 59,49 C55,55 50,55 50,49 Z" transform="rotate(135 50 50)"/>
-        <path d="M50,22 C60,27 64,39 59,49 C55,55 50,55 50,49 Z" transform="rotate(180 50 50)"/>
-        <path d="M50,22 C60,27 64,39 59,49 C55,55 50,55 50,49 Z" transform="rotate(225 50 50)"/>
-        <path d="M50,22 C60,27 64,39 59,49 C55,55 50,55 50,49 Z" transform="rotate(270 50 50)"/>
-        <path d="M50,22 C60,27 64,39 59,49 C55,55 50,55 50,49 Z" transform="rotate(315 50 50)"/>
-      </g>
-    </svg>
     <h2>Connect</h2>
     <div class="row">
       <input id="apiKeyInput" type="text" placeholder="Paste merchant api_key (from npm run seed)" />
@@ -322,19 +307,6 @@
   <div id="appShell">
     <aside class="sidebar">
       <div class="brand-row">
-        <svg class="brand-mark" viewBox="0 0 100 100" width="26" height="26" aria-hidden="true">
-          <rect x="2" y="2" width="96" height="96" rx="22" fill="#0a0a0c"/>
-          <g fill="#ffffff">
-            <path d="M50,22 C60,27 64,39 59,49 C55,55 50,55 50,49 Z" transform="rotate(0 50 50)"/>
-            <path d="M50,22 C60,27 64,39 59,49 C55,55 50,55 50,49 Z" transform="rotate(45 50 50)"/>
-            <path d="M50,22 C60,27 64,39 59,49 C55,55 50,55 50,49 Z" transform="rotate(90 50 50)"/>
-            <path d="M50,22 C60,27 64,39 59,49 C55,55 50,55 50,49 Z" transform="rotate(135 50 50)"/>
-            <path d="M50,22 C60,27 64,39 59,49 C55,55 50,55 50,49 Z" transform="rotate(180 50 50)"/>
-            <path d="M50,22 C60,27 64,39 59,49 C55,55 50,55 50,49 Z" transform="rotate(225 50 50)"/>
-            <path d="M50,22 C60,27 64,39 59,49 C55,55 50,55 50,49 Z" transform="rotate(270 50 50)"/>
-            <path d="M50,22 C60,27 64,39 59,49 C55,55 50,55 50,49 Z" transform="rotate(315 50 50)"/>
-          </g>
-        </svg>
         <div class="brand-text">
           <div class="eyebrow">Fractal Pay</div>
           <div class="brand-name">Merchant API</div>
